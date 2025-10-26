@@ -57,7 +57,7 @@ export const useMathExplainer = () => {
   return {
     explanation: readonly(explanation),
     loading: readonly(loading),
-    error: readonly(error),
+    error,
     explainProblem,
     explainFromImage
   }

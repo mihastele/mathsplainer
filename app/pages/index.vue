@@ -59,17 +59,24 @@
 
         <div class="image-upload">
           <input
+            id="file-input"
             ref="fileInput"
             type="file"
             accept="image/*"
             @change="handleImageSelect"
             class="file-input"
           />
-          <label for="file-input" class="upload-label">
-            <div class="upload-area">
+          <label
+            for="file-input"
+            class="upload-label"
+            @dragover.prevent="handleDragEnter"
+            @dragleave.prevent="handleDragLeave"
+            @drop.prevent="handleImageDrop"
+          >
+            <div class="upload-area" :class="{ dragging: isDragging }">
               <span v-if="!selectedImage" class="upload-icon">📸</span>
               <img v-else :src="selectedImage" :alt="selectedImageName" class="preview-img" />
-              <p v-if="!selectedImage">Click to upload or drag an image</p>
+              <p v-if="!selectedImage">{{ isDragging ? '📥 Drop your image here' : 'Click to upload or drag an image' }}</p>
               <p v-else class="image-name">{{ selectedImageName }}</p>
             </div>
           </label>
@@ -130,6 +137,7 @@ const selectedImage = ref('')
 const selectedImageName = ref('')
 const additionalContext = ref('')
 const fileInput = ref<HTMLInputElement>()
+const isDragging = ref(false)
 
 const useOwnKey = ref(false)
 const customApiKey = ref('')
@@ -141,9 +149,11 @@ const { explanation, loading, error, explainProblem, explainFromImage } = useMat
 const handleTextProblem = async () => {
   if (!problemText.value) return
 
+  error.value = ''
   try {
     await explainProblem(problemText.value, useOwnKey.value ? customApiKey.value : undefined)
-  } catch (err) {
+  } catch (err: any) {
+    error.value = err?.data?.statusMessage || err?.message || 'Failed to get explanation. Check your API key.'
     console.error('Error:', err)
   }
 }
@@ -154,11 +164,40 @@ const handleImageSelect = (event: Event) => {
 
   if (!file) return
 
+  processImageFile(file)
+}
+
+const handleImageDrop = (event: DragEvent) => {
+  isDragging.value = false
+  const files = event.dataTransfer?.files
+  if (!files || files.length === 0) return
+
+  const file = files[0]
+  if (!file.type.startsWith('image/')) {
+    error.value = 'Please drop an image file'
+    return
+  }
+
+  processImageFile(file)
+}
+
+const handleDragEnter = () => {
+  isDragging.value = true
+}
+
+const handleDragLeave = () => {
+  isDragging.value = false
+}
+
+const processImageFile = (file: File) => {
   selectedImageName.value = file.name
 
   const reader = new FileReader()
   reader.onload = (e) => {
     selectedImage.value = e.target?.result as string
+  }
+  reader.onerror = () => {
+    error.value = 'Failed to read image file'
   }
   reader.readAsDataURL(file)
 }
@@ -166,13 +205,15 @@ const handleImageSelect = (event: Event) => {
 const handleImageProblem = async () => {
   if (!selectedImage.value) return
 
+  error.value = ''
   try {
     await explainFromImage(
       selectedImage.value,
       useOwnKeyImage.value ? customApiKeyImage.value : undefined,
       additionalContext.value
     )
-  } catch (err) {
+  } catch (err: any) {
+    error.value = err?.data?.statusMessage || err?.message || 'Failed to analyze image. Check your API key.'
     console.error('Error:', err)
   }
 }
@@ -321,11 +362,20 @@ const handleImageProblem = async () => {
   text-align: center;
   background: #f0f9ff;
   transition: all 0.3s ease;
+  cursor: pointer;
 }
 
 .upload-area:hover {
   background: #e0f2fe;
   border-color: #0ea5e9;
+}
+
+.upload-area.dragging {
+  background: #bfdbfe;
+  border-color: #0284c7;
+  border-width: 3px;
+  transform: scale(1.02);
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
 }
 
 .upload-icon {
