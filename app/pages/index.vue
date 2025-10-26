@@ -128,7 +128,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useMathExplainer } from '../composables/useMathExplainer'
 
 const activeTab = ref<'text' | 'image'>('text')
@@ -146,12 +146,19 @@ const customApiKeyImage = ref('')
 
 const { explanation, loading, error, explainProblem, explainFromImage } = useMathExplainer()
 
+// Watch explanation for debugging
+watch(explanation, (newVal) => {
+  console.log('Explanation watched, new value:', newVal ? newVal.substring(0, 50) : 'empty')
+})
+
 const handleTextProblem = async () => {
   if (!problemText.value) return
 
   error.value = ''
   try {
+    console.log('Sending problem:', problemText.value)
     await explainProblem(problemText.value, useOwnKey.value ? customApiKey.value : undefined)
+    console.log('Explanation state after response:', explanation.value ? explanation.value.substring(0, 50) : 'empty')
   } catch (err: any) {
     error.value = err?.data?.statusMessage || err?.message || 'Failed to get explanation. Check your API key.'
     console.error('Error:', err)

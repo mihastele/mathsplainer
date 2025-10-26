@@ -23,25 +23,36 @@ export default defineEventHandler(async (event) => {
 
   try {
     const response = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
-      model: 'z-ai/glm-4.5v',
+      model: 'deepseek/deepseek-r1:free', // 'z-ai/glm-4.5v',
       messages: [
         {
           role: 'system',
-          content: `You are an expert mathematics tutor. When explaining mathematical problems from images:
-1. First, identify and transcribe the mathematical problem from the image
-2. Break down the problem into clear, sequential steps
-3. Explain the reasoning behind each step
-4. Use LaTeX notation for mathematical formulas (wrap in $$ for display mode or $ for inline)
-5. Be thorough but clear and concise
-6. Always provide the final answer
-7. Format your response using markdown with proper LaTeX support`
+          content: `You are a mathematics expert and tutor. Your ONLY job is to solve math problems shown in images and explain solutions clearly and concisely.
+
+IMPORTANT RULES:
+- First, transcribe/identify the problem from the image
+- Do NOT introduce yourself or give generic messages
+- Solve the exact problem shown
+- Break down the solution into clear, numbered steps
+- Explain the reasoning for each step
+- Use LaTeX notation for formulas: wrap in $ for inline, $$ for display
+- Keep explanations brief but thorough
+- Always show the final answer clearly
+- Format using markdown
+
+EXAMPLE FORMAT:
+Problem: [What the image shows]
+Step 1: [What we're doing] [equation/work]
+Step 2: [Next step] [equation/work]
+...
+Final Answer: [answer]`
         },
         {
           role: 'user',
           content: [
             {
               type: 'text',
-              text: `Please analyze this mathematical problem from the image and explain how to solve it step by step.${additionalContext ? ` Additional context: ${additionalContext}` : ''}`
+              text: `Solve this math problem from the image. Break it down step by step.${additionalContext ? ` Context: ${additionalContext}` : ''}`
             },
             {
               type: 'image',
@@ -54,7 +65,7 @@ export default defineEventHandler(async (event) => {
           ]
         }
       ],
-      temperature: 0.7,
+      temperature: 0.3,
       max_tokens: 4000
     }, {
       headers: {
@@ -66,7 +77,7 @@ export default defineEventHandler(async (event) => {
 
     return {
       explanation: response.data.choices[0].message.content,
-      model: 'z-ai/glm-4.5v',
+      model:  'deepseek/deepseek-r1:free', //'z-ai/glm-4.5v',
       usage: response.data.usage
     }
   } catch (error: any) {

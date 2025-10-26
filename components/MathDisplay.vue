@@ -43,41 +43,64 @@ const sanitizeHtml = (html: string) => {
 watch(
   () => props.content,
   async (newContent) => {
+    console.log('MathDisplay received content:', newContent ? newContent.substring(0, 100) : 'empty')
+
     if (!newContent) {
       renderedContent.value = ''
       return
     }
 
-    // Convert markdown-style LaTeX to proper HTML for MathJax
-    // $$...$$ -> <div class="math-display">...</div>
-    // $...$ -> <span class="math-inline">...</span>
     let processed = newContent
-      .replace(/\$\$([^$]+)\$\$/g, '<div class="math-display">$$\\n$1\\n$$</div>')
-      .replace(/\$([^$]+)\$/g, '<span class="math-inline">$1</span>')
 
-    // Convert markdown links to HTML
-    processed = processed.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>')
+    // Remove model-specific box markers
+    processed = processed.replace(/<\|begin_of_box\|>/g, '')
+    processed = processed.replace(/<\|end_of_box\|>/g, '')
+    processed = processed.trim()
+
+    // Convert markdown headings FIRST (before other replacements)
+    processed = processed.replace(/^### ([^\n]+)/gm, '<h3>$1</h3>')
+    processed = processed.replace(/^## ([^\n]+)/gm, '<h2>$1</h2>')
+    processed = processed.replace(/^# ([^\n]+)/gm, '<h1>$1</h1>')
 
     // Convert markdown bold and italic
     processed = processed.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
     processed = processed.replace(/\*([^*]+)\*/g, '<em>$1</em>')
 
-    // Convert markdown headings
-    processed = processed.replace(/^### ([^\n]+)/gm, '<h3>$1</h3>')
-    processed = processed.replace(/^## ([^\n]+)/gm, '<h2>$1</h2>')
-    processed = processed.replace(/^# ([^\n]+)/gm, '<h1>$1</h1>')
+    // Convert markdown links to HTML
+    processed = processed.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>')
 
-    // Convert newlines to <br> for paragraph breaks
-    processed = processed.replace(/\n\n/g, '</p><p>')
-    processed = '<p>' + processed + '</p>'
+    // Convert markdown-style LaTeX to proper HTML for MathJax
+    // Handle display math ($$...$$ - including multiline)
+    processed = processed.replace(/\$\$[\s\S]*?\$\$/g, (match) => {
+      return '<div class="math-display">' + match + '</div>'
+    })
+
+    // Handle inline math ($...$)
+    processed = processed.replace(/\$(?!\$)[\s\S]*?(?<!\$)\$/g, (match) => {
+      return '<span class="math-inline">' + match + '</span>'
+    })
+
+    // Convert line breaks to paragraphs
+    // Split by double newlines for paragraph breaks
+    const paragraphs = processed.split(/\n\n+/).map(para => {
+      // Replace single newlines with <br>
+      return '<p>' + para.replace(/\n/g, '<br>') + '</p>'
+    })
+
+    processed = paragraphs.join('')
 
     renderedContent.value = processed
+
+    // Trigger MathJax rendering after DOM update
+    nextTick(() => {
+      renderMath(processed)
+    })
   },
   { immediate: true }
 )
 
 onMounted(() => {
-  if (props.content) {
+  if (props.content && renderedContent.value) {
     renderMath(renderedContent.value)
   }
 })

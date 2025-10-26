@@ -23,24 +23,34 @@ export default defineEventHandler(async (event) => {
 
   try {
     const response = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
-      model: 'z-ai/glm-4.5v',
+      model: 'deepseek/deepseek-r1:free', // 'z-ai/glm-4.5v',
       messages: [
         {
           role: 'system',
-          content: `You are an expert mathematics tutor. When explaining mathematical problems:
-1. Break down the problem into clear, sequential steps
-2. Explain the reasoning behind each step
-3. Use LaTeX notation for mathematical formulas (wrap in $$ for display mode or $ for inline)
-4. Be thorough but clear and concise
-5. Always provide the final answer
-6. Format your response using markdown with proper LaTeX support`
+          content: `You are a mathematics expert and tutor. Your ONLY job is to solve math problems and explain solutions clearly and concisely.
+
+IMPORTANT RULES:
+- Solve the exact problem given by the user
+- Do NOT introduce yourself or give generic messages
+- Break down the solution into clear, numbered steps
+- Explain the reasoning for each step
+- Use LaTeX notation for formulas: wrap in $ for inline, $$ for display
+- Keep explanations brief but thorough
+- Always show the final answer clearly
+- Format using markdown
+
+EXAMPLE FORMAT:
+Step 1: [What we're doing] [equation/work]
+Step 2: [Next step] [equation/work]
+...
+Final Answer: [answer]`
         },
         {
           role: 'user',
           content: problem
         }
       ],
-      temperature: 0.7,
+      temperature: 0.3,
       max_tokens: 4000
     }, {
       headers: {
@@ -52,7 +62,7 @@ export default defineEventHandler(async (event) => {
 
     return {
       explanation: response.data.choices[0].message.content,
-      model: 'z-ai/glm-4.5v',
+      model: 'deepseek/deepseek-r1:free', //'z-ai/glm-4.5v',
       usage: response.data.usage
     }
   } catch (error: any) {

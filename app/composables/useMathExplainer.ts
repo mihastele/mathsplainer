@@ -20,8 +20,10 @@ export const useMathExplainer = () => {
       })
 
       explanation.value = response.explanation
+      console.log('Text Problem - Explanation received:', response.explanation.substring(0, 100))
       return response
     } catch (err: any) {
+      console.error('Text Problem API Error:', err)
       error.value = err.data?.statusMessage || err.message || 'Failed to get explanation'
       throw err
     } finally {
@@ -45,8 +47,10 @@ export const useMathExplainer = () => {
       })
 
       explanation.value = response.explanation
+      console.log('Image Problem - Explanation received:', response.explanation.substring(0, 100))
       return response
     } catch (err: any) {
+      console.error('Image Problem API Error:', err)
       error.value = err.data?.statusMessage || err.message || 'Failed to get explanation'
       throw err
     } finally {
@@ -55,7 +59,7 @@ export const useMathExplainer = () => {
   }
 
   return {
-    explanation: readonly(explanation),
+    explanation,  // Remove readonly to ensure reactivity
     loading: readonly(loading),
     error,
     explainProblem,
