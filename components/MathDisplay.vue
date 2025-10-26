@@ -20,17 +20,15 @@ const props = withDefaults(defineProps<Props>(), {
 
 const renderedContent = ref<string>('')
 
-const renderMath = (html: string) => {
-  // Return the HTML as-is. MathJax will process it automatically when loaded
+const renderMath = () => {
+  // Trigger MathJax rendering after DOM is updated
   if (typeof window !== 'undefined' && (window as any).MathJax) {
-    // Use nextTick to ensure DOM is updated before MathJax processes
     nextTick(() => {
       (window as any).MathJax.typesetPromise?.().catch((err: any) => {
         console.error('MathJax processing error:', err)
       })
     })
   }
-  return html
 }
 
 const sanitizeHtml = (html: string) => {
@@ -92,16 +90,14 @@ watch(
     renderedContent.value = processed
 
     // Trigger MathJax rendering after DOM update
-    nextTick(() => {
-      renderMath(processed)
-    })
+    renderMath()
   },
   { immediate: true }
 )
 
 onMounted(() => {
   if (props.content && renderedContent.value) {
-    renderMath(renderedContent.value)
+    renderMath()
   }
 })
 </script>
@@ -155,19 +151,34 @@ onMounted(() => {
 }
 
 .content :deep(.math-display) {
-  background: white;
-  padding: 1rem;
+  background: #fafbfc;
+  padding: 1.5rem 1rem;
   margin: 1.5rem 0;
   border-radius: 6px;
   border: 1px solid #e5e7eb;
+  border-left: 4px solid #3b82f6;
   overflow-x: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* MathJax container styling */
+.content :deep(.math-display mjx-container) {
+  font-size: 1.1em;
+  margin: 0 auto;
 }
 
 .content :deep(.math-inline) {
-  padding: 0.25rem 0.5rem;
-  background: rgba(59, 130, 246, 0.1);
-  border-radius: 4px;
-  font-family: 'Courier New', monospace;
+  padding: 0 0.25rem;
+  /* Let MathJax handle the rendering - clean, beautiful math */
+}
+
+/* MathJax inline math styling */
+.content :deep(p) :deep(mjx-container[display="true"]) {
+  display: block;
+  text-align: center;
+  margin: 1rem 0;
 }
 
 .empty-state {

@@ -32,7 +32,33 @@ export default defineNuxtConfig({
         { rel: 'stylesheet', href: 'https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css' }
       ],
       script: [
-        { src: 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js', async: true }
+        {
+          src: 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js',
+          async: true,
+          id: 'MathJax-script'
+        },
+        {
+          innerHTML: `
+            MathJax = {
+              tex: {
+                inlineMath: [['$', '$'], ['\\\\(', '\\\\)']],
+                displayMath: [['$$', '$$'], ['\\\\[', '\\\\]']],
+                processEscapes: true
+              },
+              svg: {
+                fontCache: 'global',
+                scale: 1.1
+              },
+              startup: {
+                pageReady: () => {
+                  return MathJax.typesetPromise().catch(() => {});
+                }
+              }
+            };
+          `,
+          type: 'text/javascript',
+          async: false
+        }
       ]
     }
   },
