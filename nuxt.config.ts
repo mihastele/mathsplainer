@@ -2,6 +2,19 @@
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
+  vite: {
+    server: {
+      middlewareMode: true,
+      hmr: {
+        protocol: 'ws',
+        host: 'localhost',
+        port: 3000
+      }
+    },
+    ssr: {
+      noExternal: ['axios']
+    }
+  },
   nitro: {
     prerender: {
       crawlLinks: false

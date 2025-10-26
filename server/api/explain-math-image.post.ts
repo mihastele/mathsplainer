@@ -23,7 +23,7 @@ export default defineEventHandler(async (event) => {
 
   try {
     const response = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
-      model: 'deepseek/deepseek-r1:free', // 'z-ai/glm-4.5v',
+      model: 'meta-llama/llama-3.3-8b-instruct:free', // 'z-ai/glm-4.5v',
       messages: [
         {
           role: 'system',
@@ -77,7 +77,7 @@ Final Answer: [answer]`
 
     return {
       explanation: response.data.choices[0].message.content,
-      model:  'deepseek/deepseek-r1:free', //'z-ai/glm-4.5v',
+      model:  'meta-llama/llama-3.3-8b-instruct:free', //'z-ai/glm-4.5v',
       usage: response.data.usage
     }
   } catch (error: any) {
