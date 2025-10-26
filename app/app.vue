@@ -16,7 +16,7 @@
 
     <footer class="footer">
       <div class="container">
-        <p>&copy; 2025 MathSplainer. Powered by OpenRouter and GLM-4.5V</p>
+        <p>&copy; 2025 MathSplainer. Powered by OpenRouter</p>
       </div>
     </footer>
   </div>
