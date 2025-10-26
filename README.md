@@ -13,6 +13,17 @@ An AI-powered mathematics learning platform that explains math problems step-by-
   - Let users provide their own API keys for privacy (recommended for public deployments)
 - 🎨 **Responsive Design**: Works seamlessly on desktop and mobile devices
 
+## Screenshots & Sample Results
+
+### Example 1
+![Sample Solution 1](./images/sol0-0.png)
+
+### Example 2
+![Sample Solution 2](./images/sol0-1.png)
+
+### Example 3
+![Sample Solution 3](./images/sol1.png)
+
 ## Tech Stack
 
 - **Frontend**: Vue 3, Nuxt 4
