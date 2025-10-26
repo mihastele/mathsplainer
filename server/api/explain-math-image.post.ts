@@ -21,45 +21,59 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  // Extract media type and base64 data
+  const mediaTypeMatch = imageBase64.match(/^data:image\/([^;]+);base64,/)
+  const mediaType = mediaTypeMatch ? `image/${mediaTypeMatch[1]}` : 'image/jpeg'
+  const base64Data = imageBase64.replace(/^data:image\/[^;]+;base64,/, '')
+
+  console.log('Image Processing Debug:', {
+    hasImageData: !!imageBase64,
+    mediaType,
+    base64DataLength: base64Data.length,
+    base64DataPrefix: base64Data.substring(0, 50),
+    additionalContext: additionalContext || 'none'
+  })
+
   try {
     const response = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
-      model: 'meta-llama/llama-3.3-8b-instruct:free', // 'z-ai/glm-4.5v',
+      model: 'z-ai/glm-4.5v',
       messages: [
         {
           role: 'system',
-          content: `You are a mathematics expert and tutor. Your ONLY job is to solve math problems shown in images and explain solutions clearly and concisely.
+          content: `You are a mathematics expert and tutor. Your PRIMARY task is to ANALYZE and SOLVE the specific math problem shown in the PROVIDED IMAGE.
 
-IMPORTANT RULES:
-- First, transcribe/identify the problem from the image
-- Do NOT introduce yourself or give generic messages
-- Solve the exact problem shown
-- Break down the solution into clear, numbered steps
-- Explain the reasoning for each step
-- Use LaTeX notation for formulas: wrap in $ for inline, $$ for display
-- Keep explanations brief but thorough
-- Always show the final answer clearly
-- Format using markdown
+CRITICAL INSTRUCTIONS:
+1. FIRST: Look at the image and describe what math problem you see
+2. EXTRACT the exact equations/problems from the image - DO NOT guess or make up problems
+3. Solve ONLY the problem shown in the image, not generic problems
+4. Break down the solution into clear, numbered steps
+5. Explain the reasoning for each step clearly
+6. Use LaTeX notation for formulas: wrap in $ for inline math, $$ for display math
+7. Always show the final answer clearly
+8. If the image is unclear, ask for clarification rather than guessing
+9. Format your response using markdown
 
-EXAMPLE FORMAT:
-Problem: [What the image shows]
+OUTPUT FORMAT:
+**Problem from Image:** [Clearly state what you see in the image]
+**Solution:**
 Step 1: [What we're doing] [equation/work]
 Step 2: [Next step] [equation/work]
 ...
-Final Answer: [answer]`
+**Final Answer:** [answer]
+
+REMEMBER: You MUST analyze the provided image. Do not ignore it or provide generic solutions.`
         },
         {
           role: 'user',
           content: [
             {
               type: 'text',
-              text: `Solve this math problem from the image. Break it down step by step.${additionalContext ? ` Context: ${additionalContext}` : ''}`
+              text: `Analyze and solve the math problem shown in this image. Be very specific about what you see in the image.${additionalContext ? ` Additional context: ${additionalContext}` : ''}`
             },
             {
-              type: 'image',
-              source: {
-                type: 'base64',
-                media_type: 'image/jpeg',
-                data: imageBase64.replace(/^data:image\/[^;]+;base64,/, '')
+              type: 'image_url',
+              image_url: {
+                url: imageBase64
               }
             }
           ]
@@ -75,13 +89,23 @@ Final Answer: [answer]`
       }
     })
 
+    console.log('OpenRouter API Response:', {
+      model: response.data.model,
+      tokensUsed: response.data.usage?.total_tokens,
+      contentLength: response.data.choices[0].message.content.length
+    })
+
     return {
       explanation: response.data.choices[0].message.content,
-      model:  'meta-llama/llama-3.3-8b-instruct:free', //'z-ai/glm-4.5v',
+      model: response.data.model,
       usage: response.data.usage
     }
   } catch (error: any) {
-    console.error('OpenRouter API Error:', error.response?.data || error.message)
+    console.error('OpenRouter API Error:', {
+      status: error.response?.status,
+      message: error.response?.data?.error?.message,
+      fullError: error.response?.data
+    })
     throw createError({
       statusCode: error.response?.status || 500,
       statusMessage: error.response?.data?.error?.message || 'Failed to get explanation from OpenRouter',
